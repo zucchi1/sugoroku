@@ -56,7 +56,54 @@ func skillup(player *Player,comSkill int, techSkill int) {
 	player.techSkill += techSkill
 	fmt.Println(player.name, "のコミュニケーションスキルは", player.comSkill, "、技術スキルは", player.techSkill, "になりました。")
 }
+func findCompanyIndex(company [23]string, name string) int {
+	for i, v := range company {
+		if v == name {
+			return i // 一致したらインデックスを返す
+		}
+	}
+	return -1 // 見つからなかった場合は -1 を返す
+}
 func getNaitei(player *Player, company string, requiredComSkill int, requiredTechSkill int, successRate int)  {
+    var companies [23]string
+    companies[0] = "サイバーエージェント"
+    companies[1] = "NTT西日本"
+    companies[2] = "マイクロンメモリジャパン"
+    companies[3] = "パナソニック"
+    companies[4] = "トヨタ自動車九州"
+    companies[5] = "富士通"
+    companies[6] = "SONY"
+    companies[7] = "マツダ"
+    companies[8] = "Amazon"
+    companies[9] = "広島大学"
+    companies[10] = "両備システムズ"
+    companies[11] = "アクセンチュア"
+    companies[12] = "キーエンス"
+    companies[13] = "ソフトバンク"
+    companies[14] = "日立製作所"
+    companies[15] = "三菱総合研究所"
+    companies[16] = "トヨタ自動車"
+    companies[17] = "NTTデータ"
+    companies[18] = "中国電力"
+    companies[19] = "野村総合研究所"
+    companies[20] = "Apple"
+    companies[21] = "伊藤忠商事"
+    companies[22] = "Google"
+
+    com_num := findCompanyIndex(companies, company)
+    if com_num == -1 {
+        fmt.Println("エラー")
+    }else{
+        if player.gyoukaiLevel[com_num]>0{
+            successRate += player.gyoukaiLevel[com_num]
+			Red := "\033[91m"    // 明るい赤
+			reset := "\033[0m" // 色のリセット
+        fmt.Printf("%sインターン参加により合格確率が%d上がった。%s\n", Red, player.gyoukaiLevel[com_num], reset)
+        }
+    }
+    if successRate >100{
+        successRate=100
+    }
 	fmt.Println(company, "の内定の必要なコミュニケーションスキルは", requiredComSkill, "、技術スキルは", requiredTechSkill, "、成功率は", successRate, "%です。")
 	//内定先のレートに応じて内定獲得の有無を変える
 	//自分のスキルと会社の必要スキルを比較し、確率を変動
@@ -78,13 +125,28 @@ func getNaitei(player *Player, company string, requiredComSkill int, requiredTec
 		fmt.Println("残念！", company, "の内定はもらえません。")
 		return // 内定がもらえなかった場合は終了
 	}
-	fmt.Println("おめでとう！", company, "の内定を獲得しました！")
+	Red := "\033[91m"    // 明るい赤
+	reset := "\033[0m" // 色のリセット
+	fmt.Printf("%sおめでとう！ %sの内定を獲得しました！%s\n", Red, company, reset)
 	player.naiteisaki = append(player.naiteisaki, company)
 }
 func getMoney(player *Player, amount int) {
-	fmt.Println(player.name, "の所持金が", amount, "円増える。")
+	Red := "\033[91m"    // 明るい赤
+	reset := "\033[0m" // 色のリセット
+	fmt.Printf("%s%sの所持金が%d円増える。%s\n", Red, player.name, amount, reset)
 	// 所持金を増やす
 	player.money += amount
+	if player.money < 0 {
+		player.money = 0 // 所持金がマイナスにならないようにする
+	}
+	fmt.Println(player.name, "の所持金は", player.money, "になりました。")
+}
+func lessMoney(player *Player, amount int) {
+	Red := "\033[91m"    // 明るい赤
+	reset := "\033[0m" // 色のリセット
+	fmt.Printf("%s%sの所持金が%d円減る。%s\n", Red, player.name, amount, reset)
+	// 所持金を増やす
+	player.money -= amount
 	if player.money < 0 {
 		player.money = 0 // 所持金がマイナスにならないようにする
 	}
@@ -97,7 +159,7 @@ func defineNaiteisaki(player *Player) int {
 	}
 	fmt.Println("内定先の会社名は以下です:")
 	for i := 0; i < len(player.naiteisaki); i++ {
-		fmt.Println(i+1, ":", player.naiteisaki[i])
+		fmt.Println(i, ":", player.naiteisaki[i])
 	}
 	if len(player.naiteisaki) == 1 {
 		fmt.Println("入社先は", player.naiteisaki[0], "です。")
@@ -108,7 +170,7 @@ func defineNaiteisaki(player *Player) int {
 	var choice int
 	reader := bufio.NewReader(os.Stdin)
 	for {
-		fmt.Println("1~", len(player.naiteisaki), "の数字を入力してください: ")
+		fmt.Println("0~", len(player.naiteisaki)-1, "の数字を入力してください: ")
 		input,err :=reader.ReadString('\n')
 		if err != nil {
 			fmt.Println("入力エラー:", err)
@@ -116,11 +178,13 @@ func defineNaiteisaki(player *Player) int {
 		}
 		input = strings.TrimSpace(input) // 改行を削除
 		choice, err = strconv.Atoi(input) // 数値に変換
-		if err != nil || choice < 1 || choice > len(player.naiteisaki) {
+		if err != nil || choice < 0 || choice > len(player.naiteisaki)-1 {
 			fmt.Println("無効な入力です。もう一度入力してください。")
 			continue
 		}
-		fmt.Println("あなたが選んだ会社は", player.naiteisaki[choice-1], "です。")
+		Red := "\033[91m"  // 明るい赤
+		reset := "\033[0m" // 色のリセット
+		fmt.Printf("あなたが選んだ会社は %s%s%s です。", Red ,player.naiteisaki[choice], reset)
 		return choice // 有効な入力があればループを抜ける
 
 		break // 有効な入力があればループを抜ける
@@ -131,6 +195,9 @@ func defineNaiteisaki(player *Player) int {
 }
 
 func defineEvent(player *Player, i int) {
+    fmt.Println("-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+")
+    fmt.Println("-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+")
+    var company_num int
     var company [23]string
     company[0] = "サイバーエージェント"
     company[1] = "NTT西日本"
@@ -235,19 +302,49 @@ func defineEvent(player *Player, i int) {
         skillup(player,0,10)
  
     case 14:
-        fmt.Println(i,"マス目：スキルアップイベント「業界研究セミナーに参加しよう！」")
-        fmt.Println("どの業界のセミナーに参加するか選んでください。")
-        fmt.Println("○○の合格確率が20上がった！")
+        fmt.Println(i,"マス目：スキルアップイベント「好きな会社のインターンに参加しよう！」")
+        fmt.Println("どの会社のインターンに参加するか選んでください。")
+        fmt.Println("参加できる会社")
+        for i, name := range company {
+                fmt.Printf("%d: %s\n", i, name)
+            }
+        for {
+            fmt.Print("参加したい会社の番号を入力してください: ")
+            fmt.Scan(&company_num)
+
+            if company_num >= 0 && company_num < len(company) {
+                break // 入力が有効ならループを抜ける
+            }
+            fmt.Println("無効な番号です。もう一度入力してください。")
+        }
+        player.gyoukaiLevel[company_num]+=30
+        fmt.Printf("%s の合格率が30上がった!", company[company_num])
+
  
     case 15:
-        fmt.Println(i,"マス目：スキルアップイベント「ある会社のインターンに参加しよう！」")
+        fmt.Println(i,"マス目：スキルアップイベント「好きな会社のインターンに参加しよう！」")
         fmt.Println("どの会社のインターンに参加するか選んでください。")
-        fmt.Println("○○の合格確率が50上がった！")
+        fmt.Println("参加できる会社")
+	    for i, name := range company {
+		    fmt.Printf("%d: %s\n", i, name)
+	    }
+        for {
+	        fmt.Println("参加したい会社の番号を入力してください: ")
+            fmt.Scan(&company_num)
+
+            if company_num >= 0 && company_num < len(company) {
+                break // 入力が有効ならループを抜ける
+            }
+	        fmt.Println("無効な番号です。もう一度入力してください。")
+        }
+        player.gyoukaiLevel[company_num]+=30
+        fmt.Printf("%s の合格率が30上がった!", company[company_num])
+
  
     case 16:
-		fmt.Println(i,"マス目：スキルアップイベント「インターンに参加しよう（交通費支給なし）！」")
+		fmt.Println(i,"マス目：スキルアップイベント「インターンに参加しよう！(交通費10000円)」")
         var input string
-        if player.money >= 15000 {
+        if player.money >= 10000 {
             fmt.Print("インターンに参加しますか？(yes/no)：")
             fmt.Scanln(&input)
 
@@ -255,12 +352,12 @@ func defineEvent(player *Player, i int) {
                 fmt.Println("かなり内容の濃いインターンだった！")
                 fmt.Println("技術スキルが25上がった！")
                 skillup(player,0,25)
-                fmt.Println("交通費の支給がなかった...")
-                fmt.Println("15000円失った...")
-                getMoney(player,-15000)
+                lessMoney(player,10000)
             } else {
                 fmt.Println("今回はインターンに参加しなかった。")
             }
+        } else {
+            fmt.Println("交通費が足りないため参加できなかった...")
         }
         
 
@@ -392,13 +489,13 @@ func defineEvent(player *Player, i int) {
 
 
 func banmen(i int,event [47]string){
-   fmt.Println("今のマスは",event[i])
-    fmt.Println("1を出せば",event[i+1])
-    fmt.Println("2を出せば",event[i+2])
-    fmt.Println("3を出せば",event[i+3])
-    fmt.Println("4を出せば",event[i+4])
-    fmt.Println("5を出せば",event[i+5])
-    fmt.Println("6を出せば",event[i+6])
+   fmt.Println("     今のマスは",event[i])
+    fmt.Println("     1を出せば",event[i+1])
+    fmt.Println("     2を出せば",event[i+2])
+    fmt.Println("     3を出せば",event[i+3])
+    fmt.Println("     4を出せば",event[i+4])
+    fmt.Println("     5を出せば",event[i+5])
+    fmt.Println("     6を出せば",event[i+6])
 }
 
 
@@ -419,9 +516,9 @@ func main(){
     event[11] = "スキルアップイベント「論文を書こう！」"
     event[12] = "お金稼ぎイベント「接客アルバイトをしよう！」"
     event[13] = "お金稼ぎイベント「プログラミングアルバイトをしよう！」"
-    event[14] = "スキルアップイベント「業界研究セミナーに参加しよう！」"
-    event[15] = "スキルアップイベント「ある会社のインターンに参加しよう！」"
-    event[16] = "スキルアップイベント「インターンに参加しよう！」"
+    event[14] = "スキルアップイベント「好きな会社のインターンに参加しよう！」"
+    event[15] = "スキルアップイベント「好きな会社のインターンに参加しよう！」"
+    event[16] = "スキルアップイベント「インターンに参加しよう！(交通費15000円)」"
     event[17] = "お金稼ぎイベント「単発バイトをしよう！」"
     event[18] = "内定イベント「サイバーエージェント」"
     event[19] = "内定イベント「NTT西日本」"
@@ -446,32 +543,38 @@ func main(){
     event[38] = "内定イベント「Apple」"
     event[39] = "内定イベント「伊藤忠商事」"
     event[40] = "内定イベント「Google」"
-    event[41] = "ボーナスステージ"
-    event[42] = "ボーナスステージ"
-    event[43] = "ボーナスステージ"
-    event[44] = "ボーナスステージ"
-    event[45] = "ボーナスステージ"
-    event[46] = "ボーナスステージ"
+    event[41] = "就活終了"
+    event[42] = "就活終了"
+    event[43] = "就活終了"
+    event[44] = "就活終了"
+    event[45] = "就活終了"
+    event[46] = "就活終了"
 	var name string
 	var nyuushasaki int
     var input string
     var input_num int
+    fmt.Println("このゲーム内では全て半角で入力してください。")
 	fmt.Print("名前を入力してください: ")
 	fmt.Scan(&name)
 	var player1 = newPlayer(name, 0,0,0,10000, nil) 
 	fmt.Println("毎ターンアイテムを10000円で買うかどうか決めることができます。")
 	fmt.Println("アイテムを買うと、1から6のサイコロの目を好きに決めることができます。")
 	fmt.Println(player1.name, "の位置は", player1.position)
+	
+	blue := "\033[94m" // 明るい青
+	reset := "\033[0m" // 色のリセット
+
 	for i := 0; i < 12 ; i++ {
-		fmt.Println("-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+")
-		fmt.Println("現在", grade(i),"年生の",month(i),"月")//何年生の何カ月
+		fmt.Println("◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆")
+        fmt.Println("◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆")
+		fmt.Printf("%s現在 %d 年生の %d 月%s\n", blue, grade(i), month(i), reset)//何年生の何カ月
 		fmt.Println("コミュニケーションスキル:",player1.comSkill, "技術スキル:", player1.techSkill,"所持金:", player1.money)
-		if player1.position < N {
+		
 			//６マス先のイベント内容を表示する処理
             //次のマス目を表示する関数
 		    banmen(player1.position,event)
 			//アイテムを使うかどうか
-			fmt.Println("アイテムを買いますか？(yes/no):")
+			fmt.Println("アイテムを買いますか？（買う場合は yes と入力してください）:")
 			fmt.Scanln(&input)
             var randomNumber int 
 
@@ -485,11 +588,19 @@ func main(){
 					rand.Seed(time.Now().UnixNano())
 					randomNumber = rand.Intn(6)+1
 				} else {
-					fmt.Print("1から6で好きなマス目を入力してください（半角数字）：")
-					fmt.Scanln(&input_num)
+                    for{
+                        fmt.Print("1から6で好きなマス目を入力してください:")
+                        fmt.Scanln(&input_num)
+                        if  input_num < 1 || input_num > 6 {
+                            fmt.Println("無効な入力です。もう一度入力してください。")
+                            continue
+                        }
+                        break
+                    }
 					randomNumber = input_num
                     player1.money -= 10000
 				}
+                input = "no"
 			} else {
 				//サイコロを振る
 				fmt.Println("サイコロを振ります。エンターを押してください")
@@ -500,37 +611,39 @@ func main(){
 			}
 			//positionの更新
 			player1.position += randomNumber
-			// if player1.position > N+1 {
+			// if player1.position >= N+1 {
 			// 	player1.position = N+1
 			// }
 			//現状の表示
 			fmt.Println("サイコロの目は", randomNumber)
+            if player1.position > N {
+                fmt.Println("ゴール！就活終了！就職先を選ぼう！")                
+                break
+            }
 			fmt.Println(player1.name, "の位置は", player1.position,"\n")
 			//ここで、マス目ごとのイベント
 			defineEvent(player1, player1.position)
-
+            
 
 			//残りのマスの表示
 			fmt.Println("残りのマスは",N-player1.position,"\n")
-			if player1.position == N {
-				fmt.Println("就活終了！就職先を選ぼう！")
-				//内定先の会社名を表示
-				nyuushasaki=defineNaiteisaki(player1)
-			}
-		}else{
-			fmt.Println("ボーナスステージ")
-			fmt.Println("サイコロを振ります。エンターを押してください")
-			bufio.NewReader(os.Stdin).ReadBytes('\n') // エンターキーを待つ
+			
+		// }else{
+			// fmt.Println("就活終了")
+			// fmt.Println("サイコロを振ります。エンターを押してください")
+			// bufio.NewReader(os.Stdin).ReadBytes('\n') // エンターキーを待つ
 
-			rand.Seed(time.Now().UnixNano())
-			randomNumber := rand.Intn(6)+1
-			//現状の表示
-			fmt.Println("サイコロの目は", randomNumber)
+			// rand.Seed(time.Now().UnixNano())
+			// randomNumber := rand.Intn(6)+1
+			// //現状の表示
+			// fmt.Println("サイコロの目は", randomNumber)
 
-		}
+		// }
 	}
+    nyuushasaki=defineNaiteisaki(player1)
 	fmt.Println("ゲーム終了")
-	fmt.Println("最終結果")
+	fmt.Println("+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+")
+    fmt.Println("最終結果")
 	fmt.Println("内定先の会社名:", player1.naiteisaki)
 	fmt.Println("入社先:",player1.naiteisaki[nyuushasaki])
 	fmt.Println("コミュニケーションスキル:",player1.comSkill, "技術スキル:", player1.techSkill,"所持金:", player1.money)
